@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Executor {
 	
 	HashMap<String, String> vars = new HashMap<>();
+	int vars_in_func_count = 0;
 	Scanner in = new Scanner(System.in);
 	
 	public static final String ANSI_RESET = "\u001B[0m";
@@ -129,6 +132,17 @@ public class Executor {
 					if(if_jto(words[0], words[1], words[2])) jump_to(words[3], lines);
 					else a = false;
 				}
+				break;
+			case "call":
+			    for(int i=1; i<words.length; i++)
+	    		{
+	    			vars.put("arg"+vars_in_func_count, words[i]);
+	    			vars_in_func_count++;
+	    		}
+			    jump_to(words[0], lines);
+			    for(int i=0; i<vars_in_func_count; i++) 
+			    	vars.put("arg"+vars_in_func_count, "");
+			    vars_in_func_count = 0;
 				break;
 			case "return":
 				System.exit(Integer.parseInt(words[0]));
