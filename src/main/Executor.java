@@ -43,6 +43,45 @@ public class Executor {
 		}
 	}
 	
+	public boolean if_jto(String first, String oper, String second)
+	{
+		String[] words_f = first.split("\\s");
+		String[] words_s = second.split("\\s");
+		first = replace_vars(first, words_f);
+		second = replace_vars(second, words_s);
+		boolean a = false;
+		switch(oper)
+		{
+			case "==":
+				if(first.equals(second)) a = true;
+				break;
+			case "!=":
+				if(!first.equals(second)) a = true;
+				break;
+			case ">":
+				if(Integer.parseInt(first) > Integer.parseInt(second)) 
+					a = true;
+				break;
+			case "<":
+				if(Integer.parseInt(first) < Integer.parseInt(second)) 
+					a = true;
+				break;
+			case ">=":
+				if(Integer.parseInt(first) >= Integer.parseInt(second)) 
+					a = true;
+				break;
+			case "<=":
+				if(Integer.parseInt(first) <= Integer.parseInt(second)) 
+					a = true;
+				break;
+			default:
+				System.out.println(ANSI_RED + "Unknow operator: '" + oper + "'!" + ANSI_RESET);
+				System.exit(-1);
+				break;
+		}
+		return a;
+	}
+	
 	public void execute(String func, String line, 
 			String[] words, List<String> lines)
 	{
@@ -81,38 +120,14 @@ public class Executor {
 				vars.put(in.nextLine().strip(), words[0]);
 				break;
 			case "if":
-				String first = replace_vars(words[0].strip(), words);
-				String oper = words[1];
-				String second = replace_vars(words[2].strip(), words);
-				String metka = words[3];
-				switch(oper)
+				if(if_jto(words[0], words[1], words[2])) jump_to(words[3], lines);
+				break;
+			case "while":
+				boolean a = true;
+				while(a)
 				{
-					case "==":
-						if(first.equals(second)) jump_to(metka, lines);
-						break;
-					case "!=":
-						if(!first.equals(second)) jump_to(metka, lines);
-						break;
-					case ">":
-						if(Integer.parseInt(first) > Integer.parseInt(second)) 
-							jump_to(metka, lines);
-						break;
-					case "<":
-						if(Integer.parseInt(first) < Integer.parseInt(second)) 
-							jump_to(metka, lines);
-						break;
-					case ">=":
-						if(Integer.parseInt(first) >= Integer.parseInt(second)) 
-							jump_to(metka, lines);
-						break;
-					case "<=":
-						if(Integer.parseInt(first) <= Integer.parseInt(second)) 
-							jump_to(metka, lines);
-						break;
-					default:
-						System.out.println(ANSI_RED + "Unknow operator: '" + oper + "'!" + ANSI_RESET);
-						System.exit(-1);
-						break;
+					if(if_jto(words[0], words[1], words[2])) jump_to(words[3], lines);
+					else a = false;
 				}
 				break;
 			case "return":
