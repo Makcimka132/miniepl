@@ -1,5 +1,6 @@
 package main;
 
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class Brain {
 	    }
 	}
 	
-	public static void go(String line, List<String> lines)
+	public static void go(String line, List<String> lines) throws FileNotFoundException
 	{	
 		String[] words = line.split("\\s");
 		String func = words[0].toLowerCase();

@@ -1,5 +1,7 @@
 package main;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +32,7 @@ public class Executor {
 		return line;
 	}
 	
-	public void jump_to(String metka, List<String> lines)
+	public void jump_to(String metka, List<String> lines) throws FileNotFoundException
 	{
 		metka = metka.strip();
 		for(int i=0; i<lines.size(); i++)
@@ -86,7 +88,7 @@ public class Executor {
 	}
 	
 	public void execute(String func, String line, 
-			String[] words, List<String> lines)
+			String[] words, List<String> lines) throws FileNotFoundException
 	{
 		switch(func)
 		{
@@ -140,6 +142,20 @@ public class Executor {
 	    			vars_in_func_count++;
 	    		}
 			    jump_to(words[0], lines);
+			    for(int i=0; i<vars_in_func_count; i++) 
+			    	vars.put("arg"+vars_in_func_count, "");
+			    vars_in_func_count = 0;
+				break;
+			case "call-import":
+				for(int i=2; i<words.length; i++)
+	    		{
+	    			vars.put("arg"+vars_in_func_count, words[i]);
+	    			vars_in_func_count++;
+	    		}
+				Scanner sc = new Scanner(new File(words[0]));
+		    	List<String> import_file = new ArrayList<String>();
+		    	while (sc.hasNextLine()){import_file.add(sc.nextLine());}
+			    jump_to(words[1], import_file);
 			    for(int i=0; i<vars_in_func_count; i++) 
 			    	vars.put("arg"+vars_in_func_count, "");
 			    vars_in_func_count = 0;
