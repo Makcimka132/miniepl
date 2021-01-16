@@ -2,16 +2,22 @@ package main;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.net.ServerSocket;
 
 public class Executor {
 	
 	HashMap<String, String> vars = new HashMap<>();
+	HashMap<String, List<String>> massives = new HashMap<>();
 	int vars_in_func_count = 0;
 	Scanner in = new Scanner(System.in);
 	
@@ -25,8 +31,26 @@ public class Executor {
 			String currword = words[i];
 			if(currword.charAt(0) == '%')
 			{
-				String varname = currword.replace("%", "").strip();
-				line = line.replace(currword, vars.get(varname));
+				if(currword.charAt(currword.length()-1) == ']')
+				{
+					String massname = "";
+					int num = 0;
+					for(int j=0; j<currword.length(); j++)
+					{
+						if(currword.charAt(j) == '[')
+						{
+							massname = currword.substring(1, j);
+							num = Integer.parseInt(currword
+									.substring(j+1, currword.length()-1));
+							break;
+						}
+					}
+					line = line.replace(currword, massives.get(massname).get(num));
+				}
+				else {
+					String varname = currword.replace("%", "").strip();
+					line = line.replace(currword, vars.get(varname));
+				}
 			}
 		}
 		return line;
@@ -138,7 +162,7 @@ public class Executor {
 			case "call":
 			    for(int i=1; i<words.length; i++)
 	    		{
-	    			vars.put("arg"+vars_in_func_count, words[i]);
+	    			vars.put("arg"+vars_in_func_count, replace_vars(words[i], words));
 	    			vars_in_func_count++;
 	    		}
 			    jump_to(words[0], lines);
@@ -159,6 +183,46 @@ public class Executor {
 			    for(int i=0; i<vars_in_func_count; i++) 
 			    	vars.put("arg"+vars_in_func_count, "");
 			    vars_in_func_count = 0;
+				break;
+			case "mass":
+				List<String> list_mass = new ArrayList<>();
+				massives.put(words[0], list_mass);
+				break;
+			case "mass.add":
+				List<String> mass = massives.get(words[0]);
+				mass.add(replace_vars(line.replace(words[0], "").strip(), words));
+				break;
+			case "mass.put":
+				List<String> massput = massives.get(words[0]);
+				int num = Integer.parseInt(replace_vars(words[1], words));
+				massput.add(num, 
+						replace_vars(
+								line.replace(words[0], "").replace(words[1], "").strip()
+								, words)
+						);
+				break;
+			case "mass.remove":
+				List<String> massrem = massives.get(words[0]);
+				massrem.remove(Integer.parseInt(words[1]));
+				break;
+			case "file.readline":
+				Scanner scc = new Scanner(new File(replace_vars(words[0], words).strip()));
+		    	List<String> lines_of_fileread = new ArrayList<String>();
+		    	while (scc.hasNextLine()){lines_of_fileread.add(scc.nextLine());}
+		    	vars.put(words[2], lines_of_fileread.get(
+		    			Integer.parseInt(replace_vars(words[1], words))));
+				break;
+			case "file.writeline":
+				try(FileWriter writer = new FileWriter(replace_vars(words[0], words), false))
+		        {
+		           writer.write(replace_vars(line.replace(words[0], ""), words));
+		           writer.flush();
+		        }
+		        catch(IOException ex){System.out.println(ex.getMessage());}
+				break;
+			case "file.readall":
+				Scanner sccc = new Scanner(new File(replace_vars(words[0], words).strip()));
+		    	while (sccc.hasNextLine()){massives.get(words[1]).add(sccc.nextLine());}
 				break;
 			case "return":
 				System.exit(Integer.parseInt(words[0]));
