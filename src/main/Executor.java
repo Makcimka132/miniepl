@@ -13,16 +13,17 @@ import java.util.regex.Pattern;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.net.ServerSocket;
+import java.util.concurrent.TimeUnit;
 
 public class Executor {
 	
 	HashMap<String, String> vars = new HashMap<>();
-	HashMap<String, List<String>> massives = new HashMap<>();
+	HashMap<String, String[]> massives = new HashMap<>();
 	int vars_in_func_count = 0;
 	Scanner in = new Scanner(System.in);
 	
 	public static final String ANSI_RESET = "\u001B[0m";
-        public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_RED = "\u001B[31m";
 	
 	public String replace_vars(String line, String[] words)
 	{
@@ -45,7 +46,7 @@ public class Executor {
 							break;
 						}
 					}
-					line = line.replace(currword, massives.get(massname).get(num));
+					line = line.replace(currword, massives.get(massname)[num]);
 				}
 				else {
 					String varname = currword.replace("%", "").strip();
@@ -56,7 +57,7 @@ public class Executor {
 		return line;
 	}
 	
-	public void jump_to(String metka, List<String> lines) throws FileNotFoundException
+	public void jump_to(String metka, List<String> lines) throws NumberFormatException, InterruptedException, IOException
 	{
 		metka = metka.strip();
 		for(int i=0; i<lines.size(); i++)
@@ -111,8 +112,29 @@ public class Executor {
 		return a;
 	}
 	
+	public boolean is_massive(String mass_name)
+	{
+		if(mass_name.charAt(mass_name.length()-1) == ']') return true;
+		else return false;
+	}
+	
+	public int massive_get_num(String mass_name)
+	{
+		int num = 0;
+		for(int i=0; i<mass_name.length(); i++)
+		{
+			if(mass_name.charAt(i) == '[')
+			{
+				num = Integer.parseInt(mass_name
+						.substring(i+1, mass_name.length()-1));
+				break;
+			}
+		}
+		return num;
+	}
+	
 	public void execute(String func, String line, 
-			String[] words, List<String> lines) throws FileNotFoundException
+			String[] words, List<String> lines) throws NumberFormatException, InterruptedException, IOException
 	{
 		switch(func)
 		{
@@ -120,7 +142,7 @@ public class Executor {
 				System.out.println(replace_vars(line, words));
 				break;
 			case "var":
-				String name = words[0];
+				String name = replace_vars(words[0], words);
 				vars.put(name, replace_vars(line.replace(name, "").replace(words[1], "").strip(), words));
 				break;
 			case "print":
@@ -185,25 +207,46 @@ public class Executor {
 			    vars_in_func_count = 0;
 				break;
 			case "mass":
-				List<String> list_mass = new ArrayList<>();
-				massives.put(words[0], list_mass);
+				String mass_name_mass = replace_vars(words[0], words);
+				int num_mass = Integer.parseInt(replace_vars(words[1], words));
+				String[] mass_mass = new String[num_mass];
+				massives.put(mass_name_mass, mass_mass);
 				break;
-			case "mass.add":
-				List<String> mass = massives.get(words[0]);
-				mass.add(replace_vars(line.replace(words[0], "").strip(), words));
+			case "mass.set":
+				String mass_name_set = replace_vars(words[0], words);
+				int num_set = Integer.parseInt(replace_vars(words[1], words));
+				String nachto = replace_vars(
+						line.replace(words[0], "")
+						.replace(words[1], "").strip(), words);
+				String[] mass_set = massives.get(mass_name_set);
+				mass_set[num_set] = nachto;
+				massives.put(mass_name_set, mass_set);
 				break;
-			case "mass.put":
-				List<String> massput = massives.get(words[0]);
-				int num = Integer.parseInt(replace_vars(words[1], words));
-				massput.add(num, 
-						replace_vars(
-								line.replace(words[0], "").replace(words[1], "").strip()
-								, words)
-						);
+			case "mass.out":
+				String[] massoutm = massives.get(replace_vars(words[0], words));
+				String strokamass="";
+				for(int j=0; j<massoutm.length; j++)
+				{
+					if(j==0) strokamass=massoutm[j];
+					else strokamass+="\n"+massoutm[j];
+				}
+				System.out.println(strokamass);
 				break;
-			case "mass.remove":
-				List<String> massrem = massives.get(words[0]);
-				massrem.remove(Integer.parseInt(words[1]));
+			case "sleep":
+				Thread.sleep(Integer.parseInt(replace_vars(words[0],words)));
+				break;
+			case "string.replace":
+				String varrepl = replace_vars(words[0], words);
+			    String chto = replace_vars(words[1], words);
+			    String nachtor = replace_vars(words[2], words);
+			    if(is_massive(varrepl)) {
+			    	int nums = massive_get_num(varrepl);
+			    	String massname = varrepl.substring(varrepl.length()-2,varrepl.length()-1);
+			    	String[] massrep = massives.get(massname);
+			    	massrep[nums] = massrep[nums].replace(chto, nachtor).strip();
+				    massives.put(massname, massrep);
+			    }
+			    else vars.put(varrepl, vars.get(varrepl).replace(chto, nachtor).strip());
 				break;
 			case "file.readline":
 				Scanner scc = new Scanner(new File(replace_vars(words[0], words).strip()));
@@ -222,7 +265,20 @@ public class Executor {
 				break;
 			case "file.readall":
 				Scanner sccc = new Scanner(new File(replace_vars(words[0], words).strip()));
-		    	while (sccc.hasNextLine()){massives.get(words[1]).add(sccc.nextLine());}
+				String[] massreadall = massives.get(replace_vars(words[0], words));
+				int zxzc=massreadall.length;
+		    	while (sccc.hasNextLine())
+		    	{
+		    		if(zxzc<0) break;
+		    		massreadall[zxzc]=sccc.nextLine();
+		    		zxzc--;
+		    	}
+				break;
+			case "file.count_lines":
+				List<String> fcllist = new ArrayList<>();
+				Scanner scfcl = new Scanner(new File(replace_vars(words[0], words).strip()));
+		    	while (scfcl.hasNextLine()){fcllist.add(scfcl.nextLine());}
+		    	vars.put(words[1], Integer.toString(fcllist.size()));
 				break;
 			case "return":
 				System.exit(Integer.parseInt(words[0]));
