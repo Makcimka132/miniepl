@@ -39,14 +39,14 @@ public class Brain {
 	    }
 	}
 	
-	public static void go(String line, List<String> lines) throws NumberFormatException, InterruptedException, IOException
+	public static void go(String line, List<String> lines, String file_name) throws NumberFormatException, InterruptedException, IOException
 	{	
 		String[] words = line.split("\\s");
 		String func = words[0].toLowerCase();
 		line = line.replace(words[0], "").trim();
 		words = line.split("\\s");
 		
-		executor.execute(func, line, words, lines);
+		executor.execute(func, line, words, lines, file_name);
 	}
 	
 }

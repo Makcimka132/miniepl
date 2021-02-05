@@ -20,7 +20,7 @@ public class Main {
     	
     	for(int i=0; i<lines.size(); i++)
     	{
-    		brain.go(lines.get(i), lines);
+    		brain.go(lines.get(i), lines, file_name);
     	}
 	}
 	
@@ -84,7 +84,7 @@ public class Main {
         	
         	for(int i=0; i<lines.size(); i++)
         	{
-        		brain.go(lines.get(i), lines);
+        		brain.go(lines.get(i), lines, file_name);
         	}
     	}
     	
